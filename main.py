@@ -48,15 +48,15 @@ class App(ctk.CTk):
 
         ctk.set_appearance_mode("light")
         
-        self.textoresultado = ctk.CTkLabel(self, text="Resultado aqui!", font=("Arial", 30, "bold"), text_color="black")
+        
+        self.textoresultado = ctk.CTkLabel(self, text="Resultado aqui!", font=("Arial", 110, "bold"), text_color="black")
         self.textoresultado.grid(row=1, column=2, padx=10, pady=10)
         
-        self.quadradoclassificacao = ctk.CTkLabel(self, width=80, height=80, fg_color="black", text_color="white", corner_radius=10, font=("Arial", 40, "bold"))
-        self.quadradoclassificacao.grid(row=1, column=1, padx=10, pady=10)
+        self.quadradoclassificacao = ctk.CTkLabel(self, width=290, height=290, fg_color="black", text_color="white", corner_radius=10, font=("Arial", 32, "bold"), text="?")
+        self.quadradoclassificacao.grid(row=1, column=1, padx=10, pady=10, rowspan=2)
         
-        self.textotempo = ctk.CTkLabel(self, text="Tempo de classificação: 0s", font=("Arial", 20, "bold"), text_color="black")
-        self.textotempo.grid(row=2, column=2, padx=10, pady=5)
-
+        self.textotempo = ctk.CTkLabel(self, text="Tempo de classificação: 0s", font=("Arial", 70, "bold"), text_color="black")
+        self.textotempo.grid(row=2, column=2, padx=10, pady=3)
 
 def tirarfoto():
     cam = cv2.VideoCapture(CAMERA_INDEX)

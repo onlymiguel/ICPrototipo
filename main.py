@@ -1,3 +1,4 @@
+import threading
 from typing import Literal
 from ollama import Client, ResponseError
 import cv2
@@ -5,6 +6,7 @@ import time
 from pydantic import BaseModel
 from animations.spinner import Carregando
 import customtkinter as ctk
+import serial
 
 #Mapeamento numeros arduino:
 # 1 = não reciclavel
@@ -191,23 +193,28 @@ def main():
     try:
         while True:
             if arduino.in_waiting > 0:
-                linha = (arduino.readline().decode("utf-8").strip())
+                linha = (arduino.readline().decode("utf-8", errors="ignore").strip())
                 
-                if linha == "CAPTURE"
-                print("Botão apertado! Tirando foto...")
-                app.after(0, lambda: app.atualizar("10", 0)) 
-                try:
-                    foto = tirarfoto()
-                    print("Foto tirada! Classificando...")
-                    codigo = classificar(foto)
-                    print(f"Codigo:: {codigo}")
+                if linha == "CAPTURE":
+                    print("Botão apertado! Tirando foto...")
+                    app.after(0, lambda: app.atualizar("10", 0)) 
+                    try:
+                        foto = tirarfoto()
+                        print("Foto tirada! Classificando...")
+                        codigo = classificar(foto)
+                        print(f"Codigo:: {codigo}")
 
-                except Exception as e:
-                    print(f"Erro ao tirar foto ou classificar: {e}")
-                    codigo = "0"
-                arduino.write(f"{codigo}\n".encode("utf-8"))
-                
+                    except Exception as e:
+                        print(f"Erro ao tirar foto ou classificar: {e}")
+                        codigo = "0"
+                    arduino.write(f"{codigo}\n".encode("utf-8"))
+                    
         time.sleep(0.05)
+    except KeyboardInterrupt:
+        print("Encerrou!")
         
         
 app = App()
+t = threading.Thread(target=main, daemon=True)
+t.start()
+app.mainloop()

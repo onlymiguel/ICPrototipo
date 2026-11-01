@@ -32,26 +32,28 @@ void setup() {
 }
 
 void loop() {
-
-    // Aqui ele pega o sinal do botão
+    // 1) Botão
     if (digitalRead(BOTAO_PIN) == LOW) {
         unsigned long agora = millis();
         if (agora - ultimaPressao > DEBOUNCE_MS && !esperandoResposta && !ledAtivo) {
-        ultimaPressao = agora;
-        esperandoResposta = true;
-        apagarTodosLeds();
-        Serial.println("CAPTURE");
+            ultimaPressao = agora;
+            esperandoResposta = true;
+            apagarTodosLeds();
+            Serial.println("CAPTURE");
+        }
     }
+
+    // 2) Resposta do Python
     if (Serial.available() > 0) {
         String resposta = Serial.readStringUntil('\n');
         resposta.trim();
-
         if (resposta.length() > 0) {
-            char classe = resposta.charAt(0);
             esperandoResposta = false;
-            acenderLed(classe);
+            acenderLed(resposta.charAt(0));
         }
     }
+
+    // 3) Apaga os LEDs depois do tempo
     if (ledAtivo && millis() - ledOnTimestamp >= LED_ON_TIME_MS) {
         apagarTodosLeds();
         ledAtivo = false;
@@ -62,61 +64,30 @@ void acenderLed(char classe) {
     apagarTodosLeds();
 
     switch (classe) {
-        case '1':
-            tone(SPEAKER_PIN, BEEP_FREQ_HZ, BEEP_DURATION_MS);
-            digitalWrite(LED_NAORECICLAVEL_PIN, HIGH);
-            ledAtivo = true;
-            ledOnTimestamp = millis();
-            break;
-        case '2':
-            tone(SPEAKER_PIN, BEEP_FREQ_HZ, BEEP_DURATION_MS);
-            digitalWrite(LED_PLASTICO_PIN, HIGH);
-            ledAtivo = true;
-            ledOnTimestamp = millis();
-            break;
-        case '3':
-            tone(SPEAKER_PIN, BEEP_FREQ_HZ, BEEP_DURATION_MS);
-            digitalWrite(LED_PAPEL_PIN, HIGH);
-            ledAtivo = true;
-            ledOnTimestamp = millis();
-            break;
-        case '4':
-            tone(SPEAKER_PIN, BEEP_FREQ_HZ, BEEP_DURATION_MS);
-            digitalWrite(LED_METAL_PIN, HIGH);
-            ledAtivo = true;
-            ledOnTimestamp = millis();
-            break;
-        case '5':
-            tone(SPEAKER_PIN, BEEP_FREQ_HZ, BEEP_DURATION_MS);
-            digitalWrite(LED_VIDRO_PIN, HIGH);
-            ledAtivo = true;
-            ledOnTimestamp = millis();
-            break;
-        case '6':
-            tone(SPEAKER_PIN, BEEP_FREQ_HZ, BEEP_DURATION_MS);
-            digitalWrite(LED_ORGANICO_PIN, HIGH);
-            ledAtivo = true;
-            ledOnTimestamp = millis();
-            break;
+        case '1': digitalWrite(LED_NAORECICLAVEL_PIN, HIGH); break;
+        case '2': digitalWrite(LED_PLASTICO_PIN, HIGH);      break;
+        case '3': digitalWrite(LED_PAPEL_PIN, HIGH);         break;
+        case '4': digitalWrite(LED_VIDRO_PIN, HIGH);         break;
+        case '5': digitalWrite(LED_METAL_PIN, HIGH);         break;
+        case '6': digitalWrite(LED_ORGANICO_PIN, HIGH);      break;
+        case '7': digitalWrite(LED_ORGANICO_PIN, HIGH);       break;
         case '0':
-        default:
-                        digitalWrite(LED_NAORECICLAVEL_PIN, HIGH);
+        default: // erro: acende todos
+            digitalWrite(LED_NAORECICLAVEL_PIN, HIGH);
             digitalWrite(LED_PLASTICO_PIN, HIGH);
             digitalWrite(LED_PAPEL_PIN, HIGH);
             digitalWrite(LED_METAL_PIN, HIGH);
             digitalWrite(LED_VIDRO_PIN, HIGH);
             digitalWrite(LED_ORGANICO_PIN, HIGH);
-            tone(SPEAKER_PIN, BEEP_FREQ_HZ, BEEP_DURATION_MS);
-            ledAtivo = true;
-            ledOnTimestamp = millis();
+
+            break;
     }
 
-    ledOnTimestamp = millis();
     ledAtivo = true;
-
-    // Emite o beep
+    ledOnTimestamp = millis();
     tone(SPEAKER_PIN, BEEP_FREQ_HZ, BEEP_DURATION_MS);
 }
+
 
 void apagarTodosLeds() {
     digitalWrite(LED_NAORECICLAVEL_PIN, LOW);

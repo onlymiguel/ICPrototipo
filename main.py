@@ -7,7 +7,8 @@ from pydantic import BaseModel
 from animations.spinner import Carregando
 import customtkinter as ctk
 import serial
-
+import sys
+import os
 #Mapeamento numeros arduino:
 # 1 = não reciclavel
 # 2 = plástico / isopor
@@ -19,7 +20,6 @@ import serial
 # 0 = erro
 
 
-PORTA_SERIAL = ""
 BAUD_RATE = 9600
 
 CAMERA_INDEX = 0
@@ -29,6 +29,33 @@ CAMINHO_FOTO = "lixotriagem.jpg"
 
 
 MODELO_LOCAL = "qwen2.5vl:3b"
+
+
+
+
+def diretorio():
+    if getattr(sys, 'frozen', False):
+
+        return os.path.dirname(sys.executable)
+    else:
+
+        return os.path.dirname(os.path.abspath(__file__))
+
+config_file = os.path.join(diretorio(), "config.txt")
+
+def carregar_configuracoes():
+    try:
+        with open(config_file, "r") as f:
+            return f.read().strip() or ""
+    except FileNotFoundError:
+        return ""
+
+def salvar_configuracoes(porta):
+    with open(config_file, "w", encoding="utf-8") as f:
+        f.write(porta)
+
+
+PORTA_SERIAL = carregar_configuracoes() 
 
 client = Client(host="http://localhost:11434")
 
@@ -62,6 +89,21 @@ class App(ctk.CTk):
         self.textotempo = ctk.CTkLabel(self, text="Tempo de classificação: 0s", font=("Arial", 70, "bold"), text_color="black")
         self.textotempo.grid(row=2, column=2, padx=10, pady=3)
         
+        self.textoconfig= ctk.CTkEntry(
+            self,
+            width=200,
+            height=40,
+            placeholder_text="Digite a porta serial (ex: COM3 ou /dev/ttyUSB0)",
+            font=("Arial", 20),
+        )
+        self.textoconfig.grid(row=3, column=1, padx=30, pady=30, columnspan=1)
+        
+        self.botao_salvar = ctk.CTkButton(self, text="Salvar porta serial", command=self.salvar_porta, font=("Arial", 20))
+        self.botao_salvar.grid(row=3, column=2, padx=30, pady=30)
+        
+        if PORTA_SERIAL:
+            self.textoconfig.insert(0, PORTA_SERIAL)
+            
     def atualizar(self,classe,tempo = 0):
         corclasses = {
             "1": "red",
@@ -88,7 +130,17 @@ class App(ctk.CTk):
         self.quadradoclassificacao.configure(text=classe, fg_color=corclasses.get(classe, "black"))
         self.textotempo.configure(text=f"Tempo de classificação: {tempo:.2f}s")
         self.textoresultado.configure(text=textoclasses.get(classe, "Erro"), text_color=corclasses.get(classe, "black"))
+
         
+        def salvar_porta(self):
+            global PORTA_SERIAL
+            porta = self.textoconfig.get().strip()
+            if porta:
+                salvar_configuracoes(porta)
+                PORTA_SERIAL = porta
+                self.botao_salvar.configure(text="Salvo! Reinicie o app")
+        
+
 
 def tirarfoto():
     cam = cv2.VideoCapture(CAMERA_INDEX)

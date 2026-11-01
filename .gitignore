@@ -1,1 +1,6 @@
 testes/
+config.txt
+.venv/
+build/
+dist/
+main.spec

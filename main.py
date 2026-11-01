@@ -132,13 +132,13 @@ class App(ctk.CTk):
         self.textoresultado.configure(text=textoclasses.get(classe, "Erro"), text_color=corclasses.get(classe, "black"))
 
         
-        def salvar_porta(self):
-            global PORTA_SERIAL
-            porta = self.textoconfig.get().strip()
-            if porta:
-                salvar_configuracoes(porta)
-                PORTA_SERIAL = porta
-                self.botao_salvar.configure(text="Salvo! Reinicie o app")
+    def salvar_porta(self):
+        global PORTA_SERIAL
+        porta = self.textoconfig.get().strip()
+        if porta:
+            salvar_configuracoes(porta)
+            PORTA_SERIAL = porta
+            self.botao_salvar.configure(text="Salvo! Reinicie o app")
         
 
 

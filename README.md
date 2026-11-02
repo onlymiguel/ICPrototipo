@@ -1,7 +1,7 @@
 
 # Automação da Separação de Resíduos
 
-Esse repositório privado contém os arquivos utilizados no projeto de iniciação científica feito pelos alunos e orientadores abaixo.
+Esse repositório contém os arquivos utilizados no projeto de iniciação científica feito pelos alunos e orientadores abaixo.
 
 
 ## Autores

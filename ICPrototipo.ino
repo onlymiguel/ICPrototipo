@@ -1,17 +1,13 @@
 const int BOTAO_PIN = 2;
 
-const int LED_NAORECICLAVEL_PIN = 3;
-const int LED_PLASTICO_PIN = 4;
-const int LED_PAPEL_PIN = 5;
-const int LED_METAL_PIN = 6;
-const int LED_VIDRO_PIN = 7;
-const int LED_ORGANICO_PIN = 8;
-const int SPEAKER_PIN = 9;
+const int VERMELHO = 8;
+const int AZUL = 6;
+const int VERDE = 7;
+
 
 const unsigned long DEBOUNCE_MS = 300;
 const unsigned long LED_ON_TIME_MS = 20000;
-const unsigned int  BEEP_FREQ_HZ = 550;
-const unsigned long BEEP_DURATION_MS = 4000;
+
 
 unsigned long ultimaPressao = 0;
 unsigned long ledOnTimestamp = 0;
@@ -21,14 +17,10 @@ bool ledAtivo = false;
 void setup() {
     Serial.begin(9600);
     pinMode(BOTAO_PIN, INPUT_PULLUP);
-    pinMode(LED_NAORECICLAVEL_PIN, OUTPUT);
-    pinMode(LED_PLASTICO_PIN, OUTPUT);
-    pinMode(LED_PAPEL_PIN, OUTPUT);
-    pinMode(LED_METAL_PIN, OUTPUT);
-    pinMode(LED_VIDRO_PIN, OUTPUT);
-    pinMode(LED_ORGANICO_PIN, OUTPUT);
-    pinMode(SPEAKER_PIN, OUTPUT);
-    apagarTodosLeds();
+    pinMode(VERMELHO, OUTPUT);
+    pinMode(AZUL, OUTPUT);
+    pinMode(VERDE, OUTPUT);
+    setCor(0,0,0);
 }
 
 void loop() {
@@ -38,7 +30,7 @@ void loop() {
         if (agora - ultimaPressao > DEBOUNCE_MS && !esperandoResposta && !ledAtivo) {
             ultimaPressao = agora;
             esperandoResposta = true;
-            apagarTodosLeds();
+            setCor(0,0,0);
             Serial.println("CAPTURE");
         }
     }
@@ -55,45 +47,36 @@ void loop() {
 
     // 3) Apaga os LEDs depois do tempo
     if (ledAtivo && millis() - ledOnTimestamp >= LED_ON_TIME_MS) {
-        apagarTodosLeds();
+        setCor(0,0,0);
         ledAtivo = false;
     }
 }
 
+
+void setCor(int r, int g, int b) {
+    analogWrite(VERMELHO, 255 - r);
+    analogWrite(VERDE, 255 - g);
+    analogWrite(AZUL, 255- b);
+}
 void acenderLed(char classe) {
-    apagarTodosLeds();
+    setCor(0,0,0);
 
     switch (classe) {
-        case '1': digitalWrite(LED_NAORECICLAVEL_PIN, HIGH); break;
-        case '2': digitalWrite(LED_PLASTICO_PIN, HIGH);      break;
-        case '3': digitalWrite(LED_PAPEL_PIN, HIGH);         break;
-        case '4': digitalWrite(LED_VIDRO_PIN, HIGH);         break;
-        case '5': digitalWrite(LED_METAL_PIN, HIGH);         break;
-        case '6': digitalWrite(LED_ORGANICO_PIN, HIGH);      break;
-        case '7': digitalWrite(LED_ORGANICO_PIN, HIGH);       break;
+        case '1': setCor(255,0,0);      break;
+        case '2': setCor(0,0,255);      break;
+        case '3': setCor(255,255,255);  break;
+        case '4': setCor(0,255,0);      break;
+        case '5': setCor(255,255,0);    break;
+        case '6': setCor(255,0,255);    break;
+        case '7': setCor(255,0,255);    break;
         case '0':
-        default: // erro: acende todos
-            digitalWrite(LED_NAORECICLAVEL_PIN, HIGH);
-            digitalWrite(LED_PLASTICO_PIN, HIGH);
-            digitalWrite(LED_PAPEL_PIN, HIGH);
-            digitalWrite(LED_METAL_PIN, HIGH);
-            digitalWrite(LED_VIDRO_PIN, HIGH);
-            digitalWrite(LED_ORGANICO_PIN, HIGH);
+        default: 
 
             break;
     }
 
     ledAtivo = true;
     ledOnTimestamp = millis();
-    tone(SPEAKER_PIN, BEEP_FREQ_HZ, BEEP_DURATION_MS);
+
 }
 
-
-void apagarTodosLeds() {
-    digitalWrite(LED_NAORECICLAVEL_PIN, LOW);
-    digitalWrite(LED_PLASTICO_PIN, LOW);
-    digitalWrite(LED_PAPEL_PIN, LOW);
-    digitalWrite(LED_METAL_PIN, LOW);
-    digitalWrite(LED_VIDRO_PIN, LOW);
-    digitalWrite(LED_ORGANICO_PIN, LOW);
-}

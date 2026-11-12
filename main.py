@@ -1,3 +1,4 @@
+import math
 import threading
 from typing import Literal
 from ollama import Client, ResponseError
@@ -9,6 +10,7 @@ import customtkinter as ctk
 import serial
 import sys
 import os
+import pygame
 #Mapeamento numeros arduino:
 # 1 = não reciclavel
 # 2 = plástico / isopor
@@ -28,7 +30,7 @@ FOTO_LARGURA = 340
 CAMINHO_FOTO = "lixotriagem.jpg"
 
 
-MODELO_LOCAL = "qwen2.5vl:3b"
+MODELO_LOCAL = "gemma4:e4b"
 
 
 
@@ -89,6 +91,15 @@ class App(ctk.CTk):
         self.textotempo = ctk.CTkLabel(self, text="Tempo de classificação: 0s", font=("Arial", 70, "bold"), text_color="black")
         self.textotempo.grid(row=2, column=2, padx=10, pady=3)
         
+        self.textocolor = ctk.CTkLabel(self, text="Cor: ?", font=("Arial", 30, "bold"), text_color="black")
+        self.textocolor.grid(row=3, column=2, padx=10, pady=3)
+        
+        self.textoestado = ctk.CTkLabel(self, text="Estado: ?", font=("Arial", 30, "bold"), text_color="black")
+        self.textoestado.grid(row=4, column=2, padx=10, pady=3)
+        
+        self.textocerteza = ctk.CTkLabel(self, text="Certeza: ?", font=("Arial", 30, "bold"), text_color="black")
+        self.textocerteza.grid(row=5, column=2, padx=10, pady=3)
+        
         self.textoconfig= ctk.CTkEntry(
             self,
             width=200,
@@ -96,24 +107,24 @@ class App(ctk.CTk):
             placeholder_text="Digite a porta serial (ex: COM3 ou /dev/ttyUSB0)",
             font=("Arial", 20),
         )
-        self.textoconfig.grid(row=3, column=1, padx=30, pady=30, columnspan=1)
+        self.textoconfig.grid(row=7, column=1, padx=30, pady=30, columnspan=1)
         
         self.botao_salvar = ctk.CTkButton(self, text="Salvar porta serial", command=self.salvar_porta, font=("Arial", 20))
-        self.botao_salvar.grid(row=3, column=2, padx=30, pady=30)
+        self.botao_salvar.grid(row=7, column=2, padx=30, pady=30)
         
         if PORTA_SERIAL:
             self.textoconfig.insert(0, PORTA_SERIAL)
             
-    def atualizar(self,classe,tempo = 0):
+    def atualizar(self,classe,tempo = 0, cor = "black", estado = "?", certeza = 0):
         corclasses = {
-            "1": "red",
+            "1": "red", 
             "2": "blue",
-            "3": "gray",
-            "4": "green",
+            "3": "gray", 
+            "4": "green", 
             "5": "yellow",
-            "6": "brown",
-            "7": "orange",
-            "0": "black",
+            "6": "brown", 
+            "7": "orange", 
+            "0": "black", 
             "10": "gray"
         }
         textoclasses = {
@@ -130,6 +141,9 @@ class App(ctk.CTk):
         self.quadradoclassificacao.configure(text=classe, fg_color=corclasses.get(classe, "black"))
         self.textotempo.configure(text=f"Tempo de classificação: {tempo:.2f}s")
         self.textoresultado.configure(text=textoclasses.get(classe, "Erro"), text_color=corclasses.get(classe, "black"))
+        self.textocolor.configure(text=f"Cor: {cor}")
+        self.textoestado.configure(text=f"Estado: {estado}")
+        self.textocerteza.configure(text=f"Certeza: {certeza:.2f}")
 
         
     def salvar_porta(self):
@@ -165,12 +179,16 @@ def warmup():
                 model=MODELO_LOCAL,
                 messages=[{"role": "user", "content": "Ready for the Iniciacao Cientifica?"}],
                 options={"temperature": 0},
-                keep_alive= -1)
+                think=False,
+                keep_alive= -1,
+                logprobs=True)
             print(f"{MODELO_LOCAL} pronto para uso! Apenas aperte o botão.")
         except ResponseError as e:
             print(f"Erro no lado do Ollama: {e.error}")
         except Exception as e:
             print(f"Erro ao carregar a IA! {e}. Confira o ollama!")
+
+
 
 def codigo(json):
     
@@ -216,19 +234,27 @@ def classificar(foto):
                 }],
                 format = ClassificacaoTemplate.model_json_schema(),
                 options = {"temperature": 0},
-                keep_alive = -1)
+                think=False,
+                keep_alive = -1,
+                logprobs=True)
             timee = time.time() - inicio
 
             resultadoformatado = codigo(ClassificacaoTemplate.model_validate_json(resp.message.content).model_dump())
-            app.after(1, lambda: app.atualizar(resultadoformatado, timee))
+            cor = resultadoformatado["color"]
+            estado = resultadoformatado["state"]
+            lps = [t.logprob for t in resp.logprobs]
+            certezamin = mat.exp(min(lps)) if lps else 0
+            app.after(1, lambda: app.atualizar(resultadoformatado, timee, cor, estado, certezamin))
             return resultadoformatado
 
         except Exception as e: 
             print(f"Erro: {e}")
             return "0"
         
-
-
+def beep():
+    pygame.mixer.init()
+    som = pygame.mixer.Sound("readyding.wav")
+    som.play()
 
 def main():
     warmup()
@@ -253,15 +279,16 @@ def main():
                     try:
                         foto = tirarfoto()
                         print("Foto tirada! Classificando...")
-                        codigo = classificar(foto)
-                        print(f"Codigo:: {codigo}")
+                        cod = classificar(foto)
+                        print(f"Codigo:: {cod}")
 
                     except Exception as e:
                         print(f"Erro ao tirar foto ou classificar: {e}")
-                        codigo = "0"
-                    arduino.write(f"{codigo}\n".encode("utf-8"))
+                        cod = "0"
+                    arduino.write(f"{cod}\n".encode("utf-8"))
+                    beep()
                     
-        time.sleep(0.05)
+            time.sleep(0.05)
     except KeyboardInterrupt:
         print("Encerrou!")
         
